@@ -1,91 +1,106 @@
-
-import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet.markercluster/dist/MarkerCluster.css';
-import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
-import 'leaflet.markercluster';
-import { Story } from '@/types/story';
+import L from "leaflet";
+import { useEffect, useRef } from "react";
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "leaflet.markercluster";
+import type { Story } from "@/types/story";
 
 // Fix for default markers in Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+	iconRetinaUrl:
+		"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+	iconUrl:
+		"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+	shadowUrl:
+		"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 interface MapProps {
-  stories: Story[];
-  onStorySelect: (story: Story) => void;
-  selectedStoryId?: string;
-  center?: { lat: number; lng: number };
-  zoom?: number;
-  onViewChange?: (center: { lat: number; lng: number }, zoom: number) => void;
-  fitBounds?: [[number, number], [number, number]];
-  fitPadding?: number;
+	stories: Story[];
+	onStorySelect: (story: Story) => void;
+	selectedStoryId?: string;
+	center?: { lat: number; lng: number };
+	zoom?: number;
+	onViewChange?: (center: { lat: number; lng: number }, zoom: number) => void;
+	fitBounds?: [[number, number], [number, number]];
+	fitPadding?: number;
 }
 
-export const Map = ({ stories, onStorySelect, selectedStoryId, center, zoom, onViewChange, fitBounds, fitPadding = 60 }: MapProps) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.MarkerClusterGroup | null>(null);
-  const lastFitKeyRef = useRef<string | null>(null);
+export const Map = ({
+	stories,
+	onStorySelect,
+	selectedStoryId,
+	center,
+	zoom,
+	onViewChange,
+	fitBounds,
+	fitPadding = 60,
+}: MapProps) => {
+	const mapRef = useRef<HTMLDivElement>(null);
+	const mapInstanceRef = useRef<L.Map | null>(null);
+	const markersRef = useRef<L.MarkerClusterGroup | null>(null);
+	const lastFitKeyRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+	useEffect(() => {
+		if (!mapRef.current || mapInstanceRef.current) return;
 
-    // Initialize map
-    const initCenter: [number, number] = center ? [center.lat, center.lng] : [39.8283, -98.5795];
-    const initZoom: number = typeof zoom === 'number' ? zoom : 4;
-    mapInstanceRef.current = L.map(mapRef.current, { zoomControl: false }).setView(initCenter, initZoom);
+		// Initialize map
+		const initCenter: [number, number] = center
+			? [center.lat, center.lng]
+			: [39.8283, -98.5795];
+		const initZoom: number = typeof zoom === "number" ? zoom : 4;
+		mapInstanceRef.current = L.map(mapRef.current, {
+			zoomControl: false,
+		}).setView(initCenter, initZoom);
 
-    // Add tile layer (Carto light style to match legacy design)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap, &copy; CARTO',
-      subdomains: 'abcd'
-    }).addTo(mapInstanceRef.current);
+		// Add tile layer (Carto light style to match legacy design)
+		L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", {
+			attribution: "&copy; OpenStreetMap, &copy; CARTO",
+			subdomains: "abcd",
+		}).addTo(mapInstanceRef.current);
 
-    // Initialize marker cluster group
-    markersRef.current = L.markerClusterGroup({
-      maxClusterRadius: 80,
-      iconCreateFunction: (cluster) => {
-        const count = cluster.getChildCount();
-        const childMarkers = cluster.getAllChildMarkers();
-        const first = childMarkers[0] as any;
-        const thumbnailUrl = first?.thumbnailUrl || null;
-        return L.divIcon({
-          html: `
+		// Initialize marker cluster group
+		markersRef.current = L.markerClusterGroup({
+			maxClusterRadius: 80,
+			iconCreateFunction: (cluster) => {
+				const count = cluster.getChildCount();
+				const childMarkers = cluster.getAllChildMarkers();
+				const first = childMarkers[0] as any;
+				const thumbnailUrl = first?.thumbnailUrl || null;
+				return L.divIcon({
+					html: `
             <div class="marker-container">
               <div class="marker-frame">
-                ${thumbnailUrl ? `<img src="${thumbnailUrl}" alt="Cluster" />` : ''}
+                ${thumbnailUrl ? `<img src="${thumbnailUrl}" alt="Cluster" />` : ""}
               </div>
               <span class="arrow"></span>
             </div>
-            <div class="cluster-counter ${count < 10 ? 'cluster-small' : ''}">${count}</div>
+            <div class="cluster-counter ${count < 10 ? "cluster-small" : ""}">${count}</div>
           `,
-          className: 'custom-cluster-icon',
-          iconSize: L.point(96, 190),
-          iconAnchor: [48, 190]
-        });
-      }
-    });
+					className: "custom-cluster-icon",
+					iconSize: L.point(96, 190),
+					iconAnchor: [48, 190],
+				});
+			},
+		});
 
-    mapInstanceRef.current.addLayer(markersRef.current);
+		mapInstanceRef.current.addLayer(markersRef.current);
 
-    // Emit view changes to parent (e.g., to persist center/zoom across remounts)
-    if (onViewChange) {
-      const emit = () => {
-        const c = mapInstanceRef.current!.getCenter();
-        const z = mapInstanceRef.current!.getZoom();
-        onViewChange({ lat: c.lat, lng: c.lng }, z);
-      };
-      mapInstanceRef.current.on('moveend', emit);
-    }
+		// Emit view changes to parent (e.g., to persist center/zoom across remounts)
+		if (onViewChange) {
+			const emit = () => {
+				const c = mapInstanceRef.current!.getCenter();
+				const z = mapInstanceRef.current!.getZoom();
+				onViewChange({ lat: c.lat, lng: c.lng }, z);
+			};
+			mapInstanceRef.current.on("moveend", emit);
+		}
 
-    // Add custom CSS styles to document head
-    const styleEl = document.createElement('style');
-    styleEl.textContent = `
+		// Add custom CSS styles to document head
+		const styleEl = document.createElement("style");
+		styleEl.textContent = `
       .marker-container {
         position: relative;
         display: flex;
@@ -188,140 +203,152 @@ export const Map = ({ stories, onStorySelect, selectedStoryId, center, zoom, onV
         border: none !important;
       }
     `;
-    document.head.appendChild(styleEl);
+		document.head.appendChild(styleEl);
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-      // Clean up styles
-      if (styleEl.parentNode) {
-        styleEl.parentNode.removeChild(styleEl);
-      }
-    };
-  }, []);
+		return () => {
+			if (mapInstanceRef.current) {
+				mapInstanceRef.current.remove();
+				mapInstanceRef.current = null;
+			}
+			// Clean up styles
+			if (styleEl.parentNode) {
+				styleEl.parentNode.removeChild(styleEl);
+			}
+		};
+	}, []);
 
-  useEffect(() => {
-    if (!mapInstanceRef.current || !markersRef.current) return;
+	useEffect(() => {
+		if (!mapInstanceRef.current || !markersRef.current) return;
 
-    // Clear existing markers
-    markersRef.current.clearLayers();
+		// Clear existing markers
+		markersRef.current.clearLayers();
 
-    // Add markers for each story
-    stories.forEach((story) => {
-      if (!story.geo) return;
+		// Add markers for each story
+		stories.forEach((story) => {
+			if (!story.geo) return;
 
-      const thumbnailPanel = story.panels.find(p => p.id === story.thumbnailPanelId) || story.panels[0];
-      const thumbnailUrl = thumbnailPanel?.media || null;
+			const thumbnailPanel =
+				story.panels.find((p) => p.id === story.thumbnailPanelId) ||
+				story.panels[0];
+			const thumbnailUrl = thumbnailPanel?.media || null;
 
-      const isSelected = story.id === selectedStoryId;
+			const isSelected = story.id === selectedStoryId;
 
-      const markerIcon = L.divIcon({
-        html: `
+			const markerIcon = L.divIcon({
+				html: `
           <div class="marker-container">
-            <div class="marker-frame ${isSelected ? 'selected' : ''}" data-story-id="${story.id}">
-              ${thumbnailUrl 
-                ? `<img src="${thumbnailUrl}" alt="${story.title}" />` 
-                : `<div class="marker-placeholder">${story.title[0]}</div>`
-              }
+            <div class="marker-frame ${isSelected ? "selected" : ""}" data-story-id="${story.id}">
+              ${
+								thumbnailUrl
+									? `<img src="${thumbnailUrl}" alt="${story.title}" />`
+									: `<div class="marker-placeholder">${story.title[0]}</div>`
+							}
             </div>
             <span class="arrow"></span>
           </div>
         `,
-        className: 'custom-story-marker',
-        iconSize: [96, 190],
-        iconAnchor: [48, 190]
-      });
+				className: "custom-story-marker",
+				iconSize: [96, 190],
+				iconAnchor: [48, 190],
+			});
 
-      const marker = L.marker([story.geo.lat, story.geo.lng], { icon: markerIcon });
-      
-      // Store thumbnail URL for cluster use
-      (marker as any).thumbnailUrl = thumbnailUrl;
-      
-      marker.on('click', () => {
-        // Center and zoom to street level before opening the story
-        if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView([story.geo!.lat, story.geo!.lng], 16, { animate: true });
-          if (onViewChange) {
-            onViewChange({ lat: story.geo!.lat, lng: story.geo!.lng }, 16);
-          }
-        }
-        onStorySelect(story);
-      });
+			const marker = L.marker([story.geo.lat, story.geo.lng], {
+				icon: markerIcon,
+			});
 
-      markersRef.current.addLayer(marker);
-    });
-  }, [stories, onStorySelect, selectedStoryId]);
+			// Store thumbnail URL for cluster use
+			(marker as any).thumbnailUrl = thumbnailUrl;
 
-  // Apply external center/zoom changes without creating feedback loops
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    const curr = map.getCenter();
-    const currZoom = map.getZoom();
-    const nextLat = center?.lat ?? curr.lat;
-    const nextLng = center?.lng ?? curr.lng;
-    const nextZoom = typeof zoom === 'number' ? zoom : currZoom;
+			marker.on("click", () => {
+				// Center and zoom to street level before opening the story
+				if (mapInstanceRef.current) {
+					mapInstanceRef.current.setView([story.geo!.lat, story.geo!.lng], 16, {
+						animate: true,
+					});
+					if (onViewChange) {
+						onViewChange({ lat: story.geo!.lat, lng: story.geo!.lng }, 16);
+					}
+				}
+				onStorySelect(story);
+			});
 
-    const latDiff = Math.abs(curr.lat - nextLat);
-    const lngDiff = Math.abs(curr.lng - nextLng);
-    const zoomDiff = Math.abs(currZoom - nextZoom);
+			markersRef.current.addLayer(marker);
+		});
+	}, [stories, onStorySelect, selectedStoryId]);
 
-    // Avoid jitter: require a meaningful delta and don't animate sync
-    const EPS = 1e-4; // ~11m threshold
-    const needsMove = latDiff > EPS || lngDiff > EPS || zoomDiff >= 1;
-    if (needsMove) {
-      map.setView([nextLat, nextLng], nextZoom, { animate: false });
-    }
-  }, [center?.lat, center?.lng, zoom]);
+	// Apply external center/zoom changes without creating feedback loops
+	useEffect(() => {
+		const map = mapInstanceRef.current;
+		if (!map) return;
+		const curr = map.getCenter();
+		const currZoom = map.getZoom();
+		const nextLat = center?.lat ?? curr.lat;
+		const nextLng = center?.lng ?? curr.lng;
+		const nextZoom = typeof zoom === "number" ? zoom : currZoom;
 
-  // Apply fitBounds when prop changes (once per unique bounds)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map || !fitBounds) return;
-    const key = JSON.stringify(fitBounds);
-    if (lastFitKeyRef.current === key) return;
-    try {
-      const b = L.latLngBounds([L.latLng(fitBounds[0][0], fitBounds[0][1]), L.latLng(fitBounds[1][0], fitBounds[1][1])]);
-      map.fitBounds(b, { padding: [fitPadding, fitPadding], animate: false });
-      lastFitKeyRef.current = key;
-    } catch {}
-  }, [fitBounds, fitPadding]);
+		const latDiff = Math.abs(curr.lat - nextLat);
+		const lngDiff = Math.abs(curr.lng - nextLng);
+		const zoomDiff = Math.abs(currZoom - nextZoom);
 
-  // Force map to resize when its container changes size (layout switches, panel open/close)
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    const el = mapRef.current;
-    if (!map || !el) return;
+		// Avoid jitter: require a meaningful delta and don't animate sync
+		const EPS = 1e-4; // ~11m threshold
+		const needsMove = latDiff > EPS || lngDiff > EPS || zoomDiff >= 1;
+		if (needsMove) {
+			map.setView([nextLat, nextLng], nextZoom, { animate: false });
+		}
+	}, [center?.lat, center?.lng, zoom]);
 
-    // Initial invalidate after mount/layout (do a couple to be safe)
-    setTimeout(() => map.invalidateSize(), 0);
-    setTimeout(() => map.invalidateSize(), 250);
+	// Apply fitBounds when prop changes (once per unique bounds)
+	useEffect(() => {
+		const map = mapInstanceRef.current;
+		if (!map || !fitBounds) return;
+		const key = JSON.stringify(fitBounds);
+		if (lastFitKeyRef.current === key) return;
+		try {
+			const b = L.latLngBounds([
+				L.latLng(fitBounds[0][0], fitBounds[0][1]),
+				L.latLng(fitBounds[1][0], fitBounds[1][1]),
+			]);
+			map.fitBounds(b, { padding: [fitPadding, fitPadding], animate: false });
+			lastFitKeyRef.current = key;
+		} catch {}
+	}, [fitBounds, fitPadding]);
 
-    // Observe container size changes
-    let ro: ResizeObserver | undefined;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => {
-        map.invalidateSize();
-      });
-      ro.observe(el);
-    }
+	// Force map to resize when its container changes size (layout switches, panel open/close)
+	useEffect(() => {
+		const map = mapInstanceRef.current;
+		const el = mapRef.current;
+		if (!map || !el) return;
 
-    const onWinResize = () => map.invalidateSize();
-    window.addEventListener('resize', onWinResize);
+		// Initial invalidate after mount/layout (do a couple to be safe)
+		setTimeout(() => map.invalidateSize(), 0);
+		setTimeout(() => map.invalidateSize(), 250);
 
-    return () => {
-      window.removeEventListener('resize', onWinResize);
-      if (ro) {
-        try { ro.unobserve(el); } catch {}
-      }
-    };
-  }, []);
+		// Observe container size changes
+		let ro: ResizeObserver | undefined;
+		if (typeof ResizeObserver !== "undefined") {
+			ro = new ResizeObserver(() => {
+				map.invalidateSize();
+			});
+			ro.observe(el);
+		}
 
-  return (
-    <div className="relative w-full h-full">
-      <div ref={mapRef} className="w-full h-full" />
-    </div>
-  );
+		const onWinResize = () => map.invalidateSize();
+		window.addEventListener("resize", onWinResize);
+
+		return () => {
+			window.removeEventListener("resize", onWinResize);
+			if (ro) {
+				try {
+					ro.unobserve(el);
+				} catch {}
+			}
+		};
+	}, []);
+
+	return (
+		<div className="relative h-full w-full">
+			<div ref={mapRef} className="h-full w-full" />
+		</div>
+	);
 };

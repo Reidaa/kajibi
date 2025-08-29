@@ -1,0 +1,12 @@
+{
+	"name": "@kajibi/core",
+	"version": "0.0.0",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		"./*": "./src/*.ts"
+	},
+	"dependencies": {
+		"zod": "^4.1.0"
+	}
+}

@@ -1,42 +1,26 @@
 {
-  "name": "kajibi-strapi",
-  "version": "0.1.0",
-  "private": true,
-  "description": "A Strapi application",
-  "scripts": {
-    "build": "strapi build",
-    "deploy": "strapi deploy",
-    "develop": "strapi develop",
-    "seed:example": "node ./scripts/seed.js",
-    "start": "strapi start",
-    "strapi": "strapi"
-  },
-  "dependencies": {
-    "@strapi/plugin-cloud": "5.9.0",
-    "@strapi/plugin-documentation": "^5.9.0",
-    "@strapi/plugin-sentry": "^5.9.0",
-    "@strapi/plugin-users-permissions": "5.9.0",
-    "@strapi/strapi": "5.9.0",
-    "fs-extra": "^10.0.0",
-    "mime-types": "^2.1.27",
-    "pg": "8.8.0",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-router-dom": "^6.0.0",
-    "strapi-prometheus": "^2.2.1",
-    "styled-components": "^6.0.0"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "typescript": "^5"
-  },
-  "engines": {
-    "node": ">=18.0.0 <=22.x.x",
-    "npm": ">=6.0.0"
-  },
-  "strapi": {
-    "uuid": "02140545-45af-4264-a519-fdc935cff15c"
-  }
+	"name": "@kajibi/backend",
+	"main": "src/index.ts",
+	"type": "module",
+	"scripts": {
+		"build": "tsdown",
+		"check-types": "tsc -b",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
+		"dev": "tsx watch src/index.ts",
+		"start": "node dist/index.js"
+	},
+	"dependencies": {
+		"dotenv": "^17.2.1",
+		"zod": "^4.0.2",
+		"@orpc/server": "^1.5.0",
+		"@orpc/client": "^1.5.0",
+		"hono": "^4.8.2",
+		"@hono/node-server": "^1.14.4"
+	},
+	"devDependencies": {
+		"tsdown": "^0.12.9",
+		"typescript": "^5.8.2",
+		"tsx": "^4.19.2",
+		"@types/node": "^22.13.11"
+	}
 }

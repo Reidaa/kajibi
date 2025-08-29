@@ -1,6 +1,21 @@
 {
-  "dependencies": {
-    "@amicaldo/strapi-google-maps": "^2.0.2",
-    "react-leaflet": "^4.2.1"
-  }
+	"name": "kajibi",
+	"private": true,
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"check": "biome check --write .",
+		"dev": "pnpm -r dev",
+		"build": "pnpm -r build",
+		"check-types": "pnpm -r check-types",
+		"dev:web": "pnpm --filter frontend dev",
+		"dev:server": "pnpm --filter backend dev"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"@biomejs/biome": "^2.2.0"
+	},
+	"packageManager": "pnpm@10.15.0"
 }
